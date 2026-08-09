@@ -1,0 +1,7 @@
+username,password,expected_code
+tester,123456,0
+admin,admin123,0
+tester,123455,401
+tester,,401
+tester01,123456,401
+,123456,401

@@ -1,0 +1,8 @@
+.reasonix/
+temps/
+__pycache__/
+.vscode/
+.pytest_cache/
+logs/
+reports/
+~$*

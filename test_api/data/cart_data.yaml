@@ -1,0 +1,19 @@
+- product_id: 101
+  quantity: 1
+  expected_code: 0
+
+- product_id: 101
+  quantity: 5
+  expected_code: 0
+
+- product_id: 9999
+  quantity: 1
+  expected_code: 404
+
+- product_id: 102
+  quantity: -1
+  expected_code: 400
+
+- product_id: 102
+  quantity: 0
+  expected_code: 400
