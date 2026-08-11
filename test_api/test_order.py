@@ -5,7 +5,7 @@ import requests
 import yaml
 from common.assert_util import assert_with_log
 from datetime import datetime
-from conftest import InitApiClient
+from common.init_apiclient import InitApiClient
 
 log=logging.getLogger(__name__)
 

@@ -72,11 +72,7 @@ def create_order(base_url,get_token,add_products_to_cart):
     yield data
 
 
-class InitApiClient:
 
-    @pytest.fixture(autouse=True)
-    def init_apiclient(self,api_client):
-            self.api_client=api_client
 
 if __name__=="__main__":
     pass

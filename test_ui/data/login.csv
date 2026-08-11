@@ -1,0 +1,7 @@
+username,password,expect_success,expect_toast
+tester,123456,TRUE,登录成功
+admin,admin123,TRUE,登录成功
+tester,123455,FALSE,账号或密码错误
+tester,,FALSE,账号或密码错误
+tester01,123456,FALSE,账号或密码错误
+,123456,FALSE,账号或密码错误

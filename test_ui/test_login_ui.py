@@ -7,45 +7,57 @@ import time
 import allure
 from common.assert_util import assert_with_log
 import logging
+from test_ui.pages.login_page import LoginPage
+from common.csv_util import csv_load
 
 log=logging.getLogger(__name__)
 
 @allure.epic("小牛电商")
 @allure.feature("登录模块-ui")
+@pytest.mark.ui
+@pytest.mark.login_ui
 class TestLoginUi():
 
-    @pytest.mark.ui
-    @pytest.mark.login_ui
-    def test_login_ui(self,driver,URL):
-        driver.get(URL)
+    @pytest.fixture(autouse=True)
+    def init_page(self,driver,URL):
+        self.page=LoginPage(driver,URL)
+
+
+    @allure.story("登录")
+    @allure.title("登陆账号: {username},密码: {password}")
+    @pytest.mark.parametrize('username,password,expect_success,expect_toast',csv_load(r'test_ui\data\login.csv'))
+    def test_login_ui(self,username,password,expect_success,expect_toast):
+
+        with allure.step("打开网页"):
+            self.page.open()
 
         with allure.step("定位账号、密码输入框和登录按钮"):
-            login_elem=driver.find_element(By.ID,'username')
-            password_elem=driver.find_element(By.XPATH,'//*[@id="password"]')
-            login_botton=driver.find_element(By.ID,'loginBtn')
+            login_elem=self.page.find(self.page.USERNAME)
+            password_elem=self.page.find(self.page.PASSWORD)
+            login_button=self.page.find(self.page.LOGINBTN)
         
 
-        assert_with_log(login_botton.is_displayed(),"登录按钮不可见")
-        assert_with_log(login_botton.text=='登录', f"登录按钮文本异常,预期文本: 登录,实际文本: {login_botton.text}")
-        assert_with_log(login_botton.is_enabled,"登录按钮不可见")
+        assert_with_log(login_button.is_displayed(),"登录按钮不可见")
+        assert_with_log(login_button.text=='登录', f"登录按钮文本异常,预期文本: 登录,实际文本: {login_button.text}")
+        assert_with_log(login_button.is_enabled(),"登录按钮不可用")
 
-        with allure.step("清空输入框"):
-            login_elem.clear()
-            password_elem.clear()
+        # with allure.step("清空输入框"):
+            # login_elem.clear()
+            # password_elem.clear()
 
-        with allure.step(f"输入账号:tester,密码:123456,点击登录"):
-            login_elem.send_keys('tester')
-            password_elem.send_keys('123456')
-            login_botton.click()
+        with allure.step(f"输入账号:{username},密码:{password},点击登录"):
+            self.page.input_username(username)
+            self.page.input_password(password)
+            self.page.loginbtn_click()
 
-        WebDriverWait(driver=driver,timeout=5).until(
-            EC.visibility_of_element_located(By.ID,'toast'))
-        toast=driver.find_element(By.ID,'toast')
-        assert_with_log(toast.text=='登陆成功',"登录toast异常")
+        toast=self.page.wait.until(
+            EC.visibility_of_element_located(self.page.TOAST))
+        assert_with_log(toast.text==expect_toast,"登录toast异常")
 
-        token=driver.execute_script("return localStorage.getItem('practice_token);")
-        assert_with_log(bool(token),"登陆后,token未存入本地")
+        expect_success = expect_success.strip().upper() == 'TRUE'
+        token=self.page.driver.execute_script("return localStorage.getItem('practice_token');")
+        assert_with_log(bool(token)==expect_success,"登录token出现异常")
 
-        time.sleep(2)
+        # self.page.click(self.page.LOGOUTBTN)
 
 

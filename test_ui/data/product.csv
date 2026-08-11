@@ -1,0 +1,5 @@
+product_name,product_description,product_price,product_stock,button_enable
+接口自动化课程,适合练习课程商品下单流程,199.00,8,True
+性能测试训练营,适合练习高价商品支付流程,499.00,3,True
+AI测试资料包,适合练习资料类商品购买,99.00,20,True
+简历诊断服务,适合练习服务类商品订单,299.00,0,False
