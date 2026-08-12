@@ -21,19 +21,18 @@ log=logging.getLogger(__name__)
 class TestProductUi():
 
     @pytest.fixture(autouse=True)
-    def init_page(self,driver,api_client):
+    def init_page(self,driver,api_client,login):
         self.page=ProductPage(driver)
         self.api_client=api_client
 
-    @pytest.mark.usefixtures("login")
     @allure.story("商品ui检查")
     @allure.title("{product_name}商品ui检查")
     @pytest.mark.parametrize('product_name,product_description,product_price,product_stock,button_enable',csv_load(r"test_ui\data\product.csv"))
     def test_select_product(self,product_name,product_description,product_price,product_stock,button_enable):
         with allure.step("从商品页面获取数据"):
             actual_name=self.page.get_product_name(product_name)
-            actual_stock=self.page.get_product_stock(product_name)[3:]
-            actual_price=self.page.get_product_price(product_name)[1:]
+            actual_stock=self.page.get_product_stock(product_name)
+            actual_price=self.page.get_product_price(product_name)
             actual_description=self.page.get_product_desciption(product_name)
             add_cart_text=self.page.get_add_cart_button_text(product_name)
             add_cart_is_enable=self.page.add_to_cart_button_is_enable(product_name)
@@ -57,7 +56,6 @@ class TestProductUi():
 
     @allure.story("商品ui检查")
     @allure.title("'刷新商品'检查")
-    @pytest.mark.usefixtures("login")
     def test_refresh_button(self,add_products_to_cart):
         with allure.step("获取'刷新商品'按钮信息"):
             refresh_button_text=self.page.get_refresh_button_text()
@@ -67,7 +65,7 @@ class TestProductUi():
         assert_with_log(refresh_button_is_enable,"'刷新商品'按钮不可用")
 
         with allure.step("记录刷新前各商品库存"):
-            pre_quantity={p['productName']: int(self.page.get_product_stock(p["productName"])[3:])
+            pre_quantity={p['productName']: int(self.page.get_product_stock(p["productName"]))
                           for p in add_products_to_cart}
 
         with allure.step("通过接口创建订单,扣减库存"):
@@ -78,7 +76,16 @@ class TestProductUi():
             for p in add_products_to_cart:
                 product_name=p["productName"]
                 expect_quantity=pre_quantity[product_name]-p['quantity']
-                WebDriverWait(self.page.driver,5).until(lambda _: int(self.page.get_product_stock(product_name)[3:])==expect_quantity,
+                WebDriverWait(self.page.driver,5).until(lambda _: int(self.page.get_product_stock(product_name))==expect_quantity,
                                                         message=f"等待商品'{product_name}'库存变为{expect_quantity}超时")
-                after_quantity = int(self.page.get_product_stock(p["productName"])[3:])
+                after_quantity = int(self.page.get_product_stock(p["productName"]))
                 assert_with_log(after_quantity==expect_quantity, f"商品'{product_name}'刷新有误, 预期库存: {expect_quantity}, 实际库存: {after_quantity}")
+
+    @allure.story("商品ui检查")
+    @allure.title("商品数量检查")
+    def test_product_count(self):
+        with allure.step("获取商品显示数量与实际数量"):
+            actual_count=self.page.get_product_count()
+            count_text=self.page.get_product_count_text()
+
+        assert_with_log(actual_count==count_text,f'商品数量异常,商品显示数量:{count_text},实际数量:{actual_count}')

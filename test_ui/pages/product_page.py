@@ -1,4 +1,5 @@
-from selenium import webdriver
+import re
+
 from selenium.webdriver.common.by import By
 from common.base_page import BasePage
 
@@ -13,6 +14,7 @@ class ProductPage(BasePage):
     STOCK = (By.XPATH, ".//div[contains(@class,'stock')]")
     ADD_CART_BTN = (By.XPATH, ".//button[@data-add-cart]")
     REFRESH_BUTTON=(By.ID,'refreshProducts')
+    PRODUCT_COUNT=(By.ID,'productCount')
 
     def _product_card(self,name):
         locator=(By.XPATH, f"//article[contains(@class,'product-card')][.//h3[contains(text(),'{name}')]]")
@@ -27,10 +29,19 @@ class ProductPage(BasePage):
         return self._product_card(name).find_element(*self.PRODUCT_DESC).text
 
     def get_product_price(self,name):
-        return self._product_card(name).find_element(*self.PRICE).text
+        return self._product_card(name).find_element(*self.PRICE).text[1:]
+
+    def get_product_price_value(self, name):
+        # 页面上价格形如 ¥199.00，这里去掉 ¥ 转成数值 199.0
+        return float(self.get_product_price(name).replace("¥", "").strip())
+
+    def is_product_price_two_decimals(self, name):
+        # 断言商品价格保留两位小数，即 ¥ 后必须正好是 数字.两位小数
+        text = self.get_product_price(name).strip()
+        return re.fullmatch(r"¥\d+\.\d{2}", text) is not None
 
     def get_product_stock(self,name):
-        return self._product_card(name).find_element(*self.STOCK).text
+        return self._product_card(name).find_element(*self.STOCK).text[3:]
 
     def get_add_cart_button_text(self,name):
         return self._product_card(name).find_element(*self.ADD_CART_BTN).text
@@ -40,6 +51,13 @@ class ProductPage(BasePage):
 
     def add_to_cart_button_is_enable(self,name):
         return self._product_card(name).find_element(*self.ADD_CART_BTN).is_enabled()
+
+    def get_product_count_text(self):
+        return int(self.find(self.PRODUCT_COUNT).text)
+
+    def get_product_count(self):
+        cards = self.driver.find_elements(By.XPATH, "//article[contains(@class,'product-card')]")
+        return len(cards)
 
 
     def get_refresh_button_is_enable(self):
