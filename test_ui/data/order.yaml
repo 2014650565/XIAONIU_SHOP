@@ -1,0 +1,19 @@
+- - 'productId': 101
+    'quantity': 10
+    'productName': '接口自动化课程'
+    'is_over_stock': True
+  
+  - 'productId': 102
+    'quantity': 1
+    'productName': '性能测试训练营'
+    'is_over_stock': False
+
+- - 'productId': 101
+    'quantity': 10
+    'productName': '接口自动化课程'
+    'is_over_stock': True
+
+  - 'productId': 102
+    'quantity': 4
+    'productName': '性能测试训练营'
+    'is_over_stock': True
