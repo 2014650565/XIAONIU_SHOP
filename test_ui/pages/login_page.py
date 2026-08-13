@@ -11,7 +11,6 @@ class LoginPage(BasePage):
     USERNAME=(By.ID,'username')
     PASSWORD=(By.ID,'password')
     LOGINBTN=(By.ID,'loginBtn')
-    TOAST=(By.ID,'toast')
     LOGOUTBTN=(By.ID,'logoutBtn')
 
     def open(self):

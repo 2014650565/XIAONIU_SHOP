@@ -145,12 +145,3 @@ class CartPage(BasePage):
 
     def create_order_button_is_enable(self):
         return self.find(self.CREATE_ORDER_BTN).is_enabled()
-
-    def get_toast(self):
-        return self.find(self.TOAST).text
-
-    def wait_toast_invisible(self,expect_toast):
-        WebDriverWait(self.driver,10).until(EC.text_to_be_present_in_element(self.TOAST,expect_toast),
-                                            message=f"等待toast出现'{expect_toast}'超时")
-        WebDriverWait(self.driver,10).until(EC.invisibility_of_element(self.TOAST),
-                                            message="等待toast消失超时")

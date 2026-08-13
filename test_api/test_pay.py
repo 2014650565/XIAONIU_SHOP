@@ -112,6 +112,13 @@ class TestPay(InitApiClient):
     @allure.story("取消订单")
     @allure.title("取消待支付订单")
     def test_cancel_unpaid_order(self,create_order):
+
+        products=self.api_client.get(path='products').json()['products']
+        order_items = create_order['order']['items']
+        order_product_ids = {item['productId'] for item in order_items}
+
+        stock_before_cancel={p['id']:p['stock'] for p in products if p['id'] in order_product_ids}
+
         with allure.step("取消订单"):
             log.info("发送取消订单请求")
             data=self.api_client.post(path=f"orders/{create_order['order']['id']}/cancel").json()
@@ -120,6 +127,15 @@ class TestPay(InitApiClient):
         condition=actual_code==0
         message=f"取消待支付订单失败,预期响应码0,实际响应码:{actual_code},返回结果:{data}"
         assert_with_log(condition,message)
+
+        products=self.api_client.get(path='products').json()['products']
+        stock_after_cancel={p['id']:p['stock'] for p in products if p['id'] in order_product_ids}
+
+        for item in order_items:
+            product_id=item['productId']
+            expect_stock=stock_before_cancel[product_id] + item['quantity']
+            assert_with_log(expect_stock==stock_before_cancel[product_id],f"取消订单后库存未回滚, 商品id: {product_id}, 预期库存: {expect_stock}, 实际库存: {stock_after_cancel[product_id]}")
+
 
         order_status=data['order']['status']
         order_statusText=data['order']['statusText']

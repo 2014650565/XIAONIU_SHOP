@@ -69,7 +69,7 @@ class TestCartUi:
 
     @allure.story("查询购物车")
     @allure.title("购物车为空时,查询购物车")
-    def test_select_when_empty(self):
+    def test_select_cart_when_empty(self):
         with allure.step("定位元素"):
             empty_cart_text=self.cart_page.get_cart_empty_text()
 

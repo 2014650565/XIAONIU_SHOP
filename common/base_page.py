@@ -1,7 +1,9 @@
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 class BasePage:
+    TOAST=(By.ID,'toast')
 
     def __init__(self,driver,timeout:int=5):
         self.driver=driver
@@ -23,3 +25,12 @@ class BasePage:
 
     def get_text(self,locator):
         return self.find(locator).text
+
+    def get_toast(self):
+         return self.find(self.TOAST).text
+
+    def wait_toast_invisible(self,expect_toast):
+            self.wait.until(EC.text_to_be_present_in_element(self.TOAST,expect_toast),
+                                                message=f"等待toast出现'{expect_toast}'超时")
+            self.wait.until(EC.invisibility_of_element(self.TOAST),
+                                                message="等待toast消失超时")
