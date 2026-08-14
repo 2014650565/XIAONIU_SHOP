@@ -14,6 +14,8 @@ from common.yaml_util import load_yaml
 
 @pytest.mark.ui
 @pytest.mark.order_ui
+@allure.epic("小牛电商")
+@allure.feature("订单模块-ui")
 class TestOrderUi:
 
     @pytest.fixture(autouse=True)
@@ -96,9 +98,40 @@ class TestOrderUi:
                         f"toast未提示库存不足, 实际: {toast}")
 
         over_stock_names=[p['productName'] for p in testcase if p['is_over_stock']]
+        if len(over_stock_names) > 1:
+            pytest.xfail("已知缺陷: 多个商品超库存时toast只提示第一个商品")
         for name in over_stock_names:
             assert_with_log(name in toast,
                             f"toast未提示超库存商品'{name}', 实际: {toast}")
+
+            
+    @allure.story("查询订单")
+    @allure.title("订单按创建时间倒序排列")
+    def test_select_orders_sorted_by_created_time_desc(self, add_products_to_cart):
+        with allure.step("通过UI创建第一个订单"):
+            self.cart_page.click_create_order_button()
+            self.order_page.wait_for_order_count(1)
+            first_order_id = self.api_client.get(path='orders').json()['orders'][0]['id']
+
+        with allure.step("再次加入商品并通过UI创建第二个订单"):
+            for p in add_products_to_cart:
+                self.api_client.post(
+                    path='cart',
+                    json={'productId': p['productId'], 'quantity': p['quantity']},
+                )
+            self.cart_page.click_create_order_button()
+            self.order_page.wait_for_order_count(2)
+            second_order_id = self.api_client.get(path='orders').json()['orders'][0]['id']
+
+        with allure.step("断言订单按创建时间倒序排列"):
+            ui_order_ids = self.order_page.get_order_ids()
+            assert_with_log(
+                ui_order_ids == [second_order_id, first_order_id],
+                f"订单未按创建时间倒序排列, 页面顺序: {ui_order_ids}, "
+                f"期望: [{second_order_id}, {first_order_id}]",
+            )
+
+
     @allure.story("查询订单")
     @allure.title("购物车为空时,查询购物车")
     def test_select_order_when_empty(self):

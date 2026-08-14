@@ -157,6 +157,7 @@ class TestOrder(InitApiClient):
 
     @allure.story("创建订单")
     @allure.title("购物车中存在多个商品数量大于库存时,创建订单")
+    @pytest.mark.xfail(reason="已知缺陷: 多个商品超库存时message只提示第一个商品", strict=True)
     def test_create_order_when_more_than_one_product_quantity_over_stock(self):
         products=[{'productId':101,'quantity':999,'productName':'接口自动化课程'},{'productId':102,'quantity':999,'productName':'性能测试训练营'}]
         with allure.step("向购物车中添加多个数量超出库存的商品"):

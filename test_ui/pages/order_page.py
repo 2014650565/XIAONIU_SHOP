@@ -60,6 +60,11 @@ class OrderPage(BasePage):
     def get_order_cards(self):
         return self.driver.find_elements(*self.ORDER_CARD)
 
+    def get_order_ids(self):
+        # 按页面显示顺序返回订单id列表
+        cards = self.get_order_cards()
+        return [card.find_element(*self.PAY_BTN).get_attribute("data-pay-order") for card in cards]
+
     def get_order_count_text(self):
         # 顶部订单统计数字：订单总数
         return int(self.find(self.ORDER_COUNT).text)

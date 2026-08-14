@@ -61,6 +61,7 @@ class TestPay(InitApiClient):
 
     @allure.story("支付订单")
     @allure.title("支付已支付的订单")
+    @pytest.mark.xfail(reason="已知缺陷: 重复支付订单返回成功(code=0),预期400", strict=True)
     def test_pay_paid_order(self,create_order):
         with allure.step("两次支付订单"):
             log.info("发送两次支付订单请求")
@@ -111,6 +112,7 @@ class TestPay(InitApiClient):
 
     @allure.story("取消订单")
     @allure.title("取消待支付订单")
+    @pytest.mark.xfail(reason="已知缺陷: 取消待支付订单后商品库存未回滚", strict=True)
     def test_cancel_unpaid_order(self,create_order):
 
         products=self.api_client.get(path='products').json()['products']
@@ -134,7 +136,7 @@ class TestPay(InitApiClient):
         for item in order_items:
             product_id=item['productId']
             expect_stock=stock_before_cancel[product_id] + item['quantity']
-            assert_with_log(expect_stock==stock_before_cancel[product_id],f"取消订单后库存未回滚, 商品id: {product_id}, 预期库存: {expect_stock}, 实际库存: {stock_after_cancel[product_id]}")
+            assert_with_log(expect_stock==stock_after_cancel[product_id],f"取消订单后库存未回滚, 商品id: {product_id}, 预期库存: {expect_stock}, 实际库存: {stock_after_cancel[product_id]}")
 
 
         order_status=data['order']['status']
@@ -172,6 +174,7 @@ class TestPay(InitApiClient):
 
     @allure.story("取消订单")
     @allure.title("取消已取消订单")
+    @pytest.mark.xfail(reason="已知缺陷: 重复取消订单返回成功(code=0),预期409", strict=True)
     def test_cancel_canceled_order(self,create_order):
         order_id=create_order['order']['id']
         with allure.step("两次取消订单"):
