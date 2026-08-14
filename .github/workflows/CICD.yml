@@ -27,6 +27,8 @@ jobs:
 
       - name: network diagnosis (dns + http)
         run: |
+          echo "--- chrome version ---"
+          google-chrome --version 2>/dev/null || "$CHROME_PATH" --version 2>/dev/null || chrome --version 2>/dev/null || echo "chrome version unknown"
           echo "--- DNS resolution (runner) ---"
           python - <<'EOF'
           import socket

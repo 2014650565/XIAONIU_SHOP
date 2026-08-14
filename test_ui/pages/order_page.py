@@ -124,7 +124,8 @@ class OrderPage(BasePage):
         return self._order_card_by_id(order_id).find_element(*self.PAY_BTN)
 
     def click_pay_button(self, order_id):
-        self.get_pay_button(order_id).click()
+        btn = self.get_pay_button(order_id)
+        self.driver.execute_script("arguments[0].click();", btn)
 
     def pay_button_is_enable(self, order_id):
         return self.get_pay_button(order_id).is_enabled()
@@ -133,7 +134,8 @@ class OrderPage(BasePage):
         return self._order_card_by_id(order_id).find_element(*self.CANCEL_BTN)
 
     def click_cancel_button(self, order_id):
-        self.get_cancel_button(order_id).click()
+        btn = self.get_cancel_button(order_id)
+        self.driver.execute_script("arguments[0].click();", btn)
 
     def cancel_button_is_enable(self, order_id):
         return self.get_cancel_button(order_id).is_enabled()

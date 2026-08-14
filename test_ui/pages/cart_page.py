@@ -129,7 +129,8 @@ class CartPage(BasePage):
         return re.fullmatch(r"¥\d+\.\d{2}", text) is not None
 
     def click_remove_cart_button(self, name=None, product_id=None):
-        self.get_cart_item_remove_button(name=name, product_id=product_id).click()
+        btn = self.get_cart_item_remove_button(name=name, product_id=product_id)
+        self.driver.execute_script("arguments[0].click();", btn)
 
     def is_cart_empty(self):
         return self.CART_EMPTY_TEXT in self.find(self.CART_CONTAINER).text

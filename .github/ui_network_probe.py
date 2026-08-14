@@ -1,3 +1,4 @@
+import json
 import platform
 import time
 
@@ -7,9 +8,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 
-# CI network probe: reproduce browser-side /api requests and print per-request
-# timing plus page state. Used to find out which layer (DNS / domain / server /
-# Chrome) causes UI test timeouts on GitHub Actions.
+# CI network probe: reproduce browser-side /api requests and diagnose why
+# Selenium clicks on dashboard buttons may not trigger fetch calls in CI.
 
 BASE_URL = "http://ceshixiaoniu.com/ecommerce-practice-app.html"
 USERNAME = "tester"
@@ -17,7 +17,7 @@ PASSWORD = "123456"
 
 
 def api_timings(driver):
-    # Collect completed /api requests via the Performance API (ms).
+    # Completed /api requests via the Performance API (ms).
     return driver.execute_script(
         "return performance.getEntriesByType('resource')"
         ".filter(e => e.name.includes('/api/'))"
@@ -43,6 +43,80 @@ def page_state(driver):
     }
 
 
+def inject_instrumentation(driver):
+    # Record every fetch call (even if it hangs) and every click (even if a
+    # handler later stops propagation) so we can tell what the page received.
+    driver.execute_script(
+        """
+        window.__probe_fetches = [];
+        const origFetch = window.fetch.bind(window);
+        window.fetch = function (url, options) {
+            const rec = {url: String(url), method: (options && options.method) || 'GET',
+                         started: Math.round(performance.now()), settled: null, status: null, error: null};
+            window.__probe_fetches.push(rec);
+            return origFetch(url, options).then(
+                (r) => { rec.settled = Math.round(performance.now()); rec.status = r.status; return r; },
+                (e) => { rec.settled = Math.round(performance.now()); rec.error = String(e); throw e; }
+            );
+        };
+        window.__probe_clicks = [];
+        document.addEventListener('click', (e) => {
+            const t = e.target;
+            window.__probe_clicks.push({
+                t: Math.round(performance.now()),
+                tag: t.tagName,
+                id: t.id || '',
+                cls: typeof t.className === 'string' ? t.className : '',
+                x: Math.round(e.clientX), y: Math.round(e.clientY),
+                trusted: e.isTrusted
+            });
+        }, true);
+        """
+    )
+
+
+def dump_events(driver, label):
+    data = json.loads(
+        driver.execute_script(
+            "return JSON.stringify({fetches: window.__probe_fetches, clicks: window.__probe_clicks});"
+        )
+    )
+    print(f"[probe] {label}: state={page_state(driver)}", flush=True)
+    print(f"[probe] {label}: fetches={data['fetches']}", flush=True)
+    print(f"[probe] {label}: clicks={data['clicks']}", flush=True)
+    print(f"[probe] {label}: api timings={api_timings(driver)}", flush=True)
+
+
+def analyze_first_add_cart_button(driver):
+    info = driver.execute_script(
+        """
+        const btn = document.querySelector('[data-add-cart]');
+        if (!btn) return {found: false};
+        btn.scrollIntoView({block: 'center'});
+        const r = btn.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const hit = document.elementFromPoint(cx, cy);
+        const card = btn.closest('.product-card');
+        const cs = getComputedStyle(btn);
+        return {
+            found: true,
+            rect: {x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height)},
+            disabled: btn.disabled,
+            stockText: card ? (card.querySelector('.stock') || {textContent: null}).textContent : null,
+            display: cs.display,
+            visibility: cs.visibility,
+            offsetParentNull: btn.offsetParent === null,
+            hit: hit ? {tag: hit.tagName, id: hit.id || '', cls: typeof hit.className === 'string' ? hit.className : ''} : null,
+            dashboardDisplay: getComputedStyle(document.querySelector('#dashboard')).display,
+            loginPanelDisplay: getComputedStyle(document.querySelector('#loginPanel')).display,
+            viewport: {w: window.innerWidth, h: window.innerHeight},
+            visibilityState: document.visibilityState
+        };
+        """
+    )
+    print(f"[probe] add-cart button analysis: {info}", flush=True)
+
+
 def new_driver():
     if platform.system() == "Windows":
         options = EdgeOptions()
@@ -60,9 +134,16 @@ def main():
     driver.set_page_load_timeout(30)
     driver.set_script_timeout(15)
     try:
+        print(
+            f"[probe] browserVersion={driver.capabilities.get('browserVersion')} "
+            f"platform={driver.capabilities.get('platformName')}",
+            flush=True,
+        )
         t0 = time.time()
         driver.get(BASE_URL)
         print(f"[probe] page load: {time.time() - t0:.2f}s", flush=True)
+
+        inject_instrumentation(driver)
 
         user = driver.find_element(By.ID, "username")
         user.clear()
@@ -74,44 +155,48 @@ def main():
         t0 = time.time()
         driver.find_element(By.ID, "loginBtn").click()
         time.sleep(5)
-        print(f"[probe] login + 5s: elapsed={time.time() - t0:.2f}s state={page_state(driver)}", flush=True)
-        print(f"[probe] api timings after login: {api_timings(driver)}", flush=True)
+        print(f"[probe] login click + 5s: elapsed={time.time() - t0:.2f}s", flush=True)
+        dump_events(driver, "after login")
+
+        analyze_first_add_cart_button(driver)
 
         t0 = time.time()
-        try:
-            status = driver.execute_async_script(
-                "const done = arguments[arguments.length - 1];"
-                "fetch('/api/health').then(r => done('status=' + r.status)).catch(e => done('error=' + e.message));"
-            )
-            print(f"[probe] fetch /api/health: {status} in {time.time() - t0:.2f}s", flush=True)
-        except Exception as exc:
-            print(f"[probe] fetch /api/health: TIMEOUT {exc!r} after {time.time() - t0:.2f}s", flush=True)
-
         try:
             btn = WebDriverWait(driver, 10).until(
                 lambda d: d.find_element(By.CSS_SELECTOR, "[data-add-cart]")
             )
             btn.click()
             time.sleep(5)
-            print(f"[probe] add-to-cart + 5s: state={page_state(driver)}", flush=True)
-            print(f"[probe] api timings after add: {api_timings(driver)}", flush=True)
+            print(f"[probe] selenium click add-cart + 5s: elapsed={time.time() - t0:.2f}s", flush=True)
+            dump_events(driver, "after selenium add-cart click")
         except Exception as exc:
-            print(f"[probe] add-to-cart failed: {exc!r}", flush=True)
+            print(f"[probe] selenium add-cart click raised: {exc!r}", flush=True)
 
+        try:
+            driver.execute_script("document.querySelector('[data-add-cart]').click();")
+            time.sleep(3)
+            print("[probe] js synthetic add-cart click + 3s", flush=True)
+            dump_events(driver, "after js add-cart click")
+        except Exception as exc:
+            print(f"[probe] js add-cart click raised: {exc!r}", flush=True)
+
+        t0 = time.time()
         try:
             driver.find_element(By.ID, "createOrderBtn").click()
             time.sleep(3)
-            print(f"[probe] create-order + 3s: state={page_state(driver)}", flush=True)
+            print(f"[probe] selenium click create-order + 3s: elapsed={time.time() - t0:.2f}s", flush=True)
+            dump_events(driver, "after selenium create-order click")
         except Exception as exc:
-            print(f"[probe] create-order failed: {exc!r}", flush=True)
+            print(f"[probe] selenium create-order click raised: {exc!r}", flush=True)
 
+        t0 = time.time()
         try:
             driver.find_element(By.ID, "refreshOrders").click()
             time.sleep(5)
-            print(f"[probe] refresh-orders + 5s: state={page_state(driver)}", flush=True)
-            print(f"[probe] api timings after refresh-orders: {api_timings(driver)}", flush=True)
+            print(f"[probe] selenium click refresh-orders + 5s: elapsed={time.time() - t0:.2f}s", flush=True)
+            dump_events(driver, "after selenium refresh-orders click")
         except Exception as exc:
-            print(f"[probe] refresh-orders failed: {exc!r}", flush=True)
+            print(f"[probe] selenium refresh-orders click raised: {exc!r}", flush=True)
 
         print("[probe] done", flush=True)
     finally:

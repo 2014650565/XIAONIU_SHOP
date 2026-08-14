@@ -16,7 +16,8 @@ class BasePage:
         return self.wait.until(EC.visibility_of_element_located(locator))
 
     def click(self,locator):
-        return self.find(locator).click()
+        el=self.find(locator)
+        self.driver.execute_script("arguments[0].click();", el)
 
     def input_text(self,locator,text:str):
         el=self.find(locator)
