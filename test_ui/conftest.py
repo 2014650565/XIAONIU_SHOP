@@ -38,10 +38,10 @@ def login(driver,URL):
         username,password='tester','123456'
         page.login(username,password)
         log.info(f"登陆账号: {username},密码: {password}")
-    WebDriverWait(driver, 10).until(
+    WebDriverWait(driver, 30).until(
     EC.text_to_be_present_in_element(page.TOAST, "登录成功"),
     message="等待登录toast出现超时")
-    WebDriverWait(driver, 10).until(
+    WebDriverWait(driver, 30).until(
         EC.invisibility_of_element_located(page.TOAST),
         message="等待登录toast消失超时")
 

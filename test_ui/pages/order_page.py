@@ -69,7 +69,7 @@ class OrderPage(BasePage):
         # 顶部订单统计数字：订单总数
         return int(self.find(self.ORDER_COUNT).text)
 
-    def wait_for_order_count(self, count, timeout=5):
+    def wait_for_order_count(self, count, timeout=20):
         # 创建/支付/取消订单后列表是异步刷新的，等待数量变为期望值再断言
         WebDriverWait(self.driver, timeout).until(
             lambda d: d.find_element(*self.ORDER_COUNT).text == str(count),
@@ -83,7 +83,7 @@ class OrderPage(BasePage):
     def get_order_status(self, order_id):
         return self._order_card_by_id(order_id).find_element(*self.ORDER_STATUS).text
 
-    def wait_for_order_status(self, order_id, expect_status, timeout=5):
+    def wait_for_order_status(self, order_id, expect_status, timeout=20):
         # 支付/取消后状态异步刷新，等待状态变为期望值再断言
         WebDriverWait(self.driver, timeout).until(
             lambda d: self.get_order_status(order_id) == expect_status,

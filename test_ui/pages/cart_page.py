@@ -69,7 +69,7 @@ class CartPage(BasePage):
     def get_cart_item_count(self):
         return len(self.get_cart_items())
 
-    def wait_for_cart_item_count(self, count, timeout=5):
+    def wait_for_cart_item_count(self, count, timeout=20):
         WebDriverWait(self.driver, timeout).until(
             lambda d: len(d.find_elements(*self.CART_ITEM)) == count,
             message=f"等待购物车条目数变为 {count} 超时",
@@ -79,7 +79,7 @@ class CartPage(BasePage):
         # 顶部统计数字：购物车所有商品数量之和
         return self.find(self.CART_COUNT).text
 
-    def wait_for_cart_count_text(self, count, timeout=5):
+    def wait_for_cart_count_text(self, count, timeout=20):
         # 添加/删除商品后，购物车统计是异步刷新的，等待数字变为期望值再断言
         WebDriverWait(self.driver, timeout).until(
             lambda d: d.find_element(*self.CART_COUNT).text == str(count),

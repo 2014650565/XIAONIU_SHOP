@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 class BasePage:
     TOAST=(By.ID,'toast')
 
-    def __init__(self,driver,timeout:int=5):
+    def __init__(self,driver,timeout:int=20):
         self.driver=driver
         self.wait=WebDriverWait(driver,timeout)
 

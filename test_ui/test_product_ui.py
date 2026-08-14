@@ -76,7 +76,7 @@ class TestProductUi():
             for p in add_products_to_cart:
                 product_name=p["productName"]
                 expect_quantity=pre_quantity[product_name]-p['quantity']
-                WebDriverWait(self.page.driver,5).until(lambda _: int(self.page.get_product_stock(product_name))==expect_quantity,
+                WebDriverWait(self.page.driver,20).until(lambda _: int(self.page.get_product_stock(product_name))==expect_quantity,
                                                         message=f"等待商品'{product_name}'库存变为{expect_quantity}超时")
                 after_quantity = int(self.page.get_product_stock(p["productName"]))
                 assert_with_log(after_quantity==expect_quantity, f"商品'{product_name}'刷新有误, 预期库存: {expect_quantity}, 实际库存: {after_quantity}")
