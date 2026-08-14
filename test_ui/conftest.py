@@ -1,4 +1,7 @@
+import platform
+
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pytest
@@ -11,9 +14,18 @@ log=logging.getLogger(__name__)
 
 @pytest.fixture(scope='function',autouse=True)
 def driver():
-    driver=webdriver.Edge()
+    # CI(Linux) 使用无头 Chrome,本地(Windows)继续使用 Edge
+    if platform.system() == 'Linux':
+        chrome_options = ChromeOptions()
+        chrome_options.add_argument('--headless=new')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--window-size=1920,1080')
+        driver = webdriver.Chrome(options=chrome_options)
+    else:
+        driver = webdriver.Edge()
+        driver.maximize_window()
     driver.implicitly_wait(3)
-    driver.maximize_window()
     yield driver
     driver.quit()
 
