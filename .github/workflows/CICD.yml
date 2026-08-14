@@ -25,30 +25,5 @@ jobs:
       - name: install dependencies
         run: pip install flask pytest requests pyyaml allure-pytest "selenium>=4.15" pytest-selenium
 
-      - name: network diagnosis (dns + http)
-        run: |
-          echo "--- chrome version ---"
-          google-chrome --version 2>/dev/null || "$CHROME_PATH" --version 2>/dev/null || chrome --version 2>/dev/null || echo "chrome version unknown"
-          echo "--- DNS resolution (runner) ---"
-          python - <<'EOF'
-          import socket
-          for host in ("ceshixiaoniu.com", "43.133.227.52"):
-              try:
-                  ips = sorted({info[4][0] for info in socket.getaddrinfo(host, 80, socket.AF_UNSPEC)})
-                  print(host, "->", ips)
-              except Exception as exc:
-                  print(host, "resolve error:", exc)
-          EOF
-          echo "--- curl via domain ---"
-          curl -so /dev/null -w "domain page: http=%{http_code} total=%{time_total}s connect=%{time_connect}s\n" -m 25 http://ceshixiaoniu.com/ecommerce-practice-app.html || echo "domain page FAILED"
-          curl -so /dev/null -w "domain /api/health: http=%{http_code} total=%{time_total}s connect=%{time_connect}s\n" -m 25 http://ceshixiaoniu.com/api/health || echo "domain health FAILED"
-          echo "--- curl via ip ---"
-          curl -so /dev/null -w "ip page: http=%{http_code} total=%{time_total}s connect=%{time_connect}s\n" -m 25 http://43.133.227.52/ecommerce-practice-app.html || echo "ip page FAILED"
-          curl -so /dev/null -w "ip /api/health: http=%{http_code} total=%{time_total}s connect=%{time_connect}s\n" -m 25 http://43.133.227.52/api/health || echo "ip health FAILED"
-
-      - name: browser api probe
-        continue-on-error: true
-        run: python .github/ui_network_probe.py
-
       - name: run tests
         run: pytest
