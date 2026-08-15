@@ -92,6 +92,8 @@ class TestCart(InitApiClient):
     @allure.title("添加商品id: {testcase[product_id]},数量: {testcase[quantity]}")
     @pytest.mark.parametrize('testcase',load_yaml(r"test_api/data/cart_data.yaml"))
     def test_add_product_to_cart(self,testcase):
+        if testcase['quantity'] is None:
+            pytest.xfail("已知缺陷: 数量为空时系统返回成功(code=0),预期400")
         if testcase['quantity'] == 0:
             pytest.xfail("已知缺陷: 添加数量0的商品时系统返回成功(code=0),预期400")
         with allure.step("添加商品到购物车"):
@@ -234,4 +236,3 @@ class TestCart(InitApiClient):
         #     log.error(message)
         # assert actual_code == 404,message
         assert_with_log(actual_code == 404,message)
-

@@ -17,3 +17,11 @@
 - product_id: 102
   quantity: 0
   expected_code: 400
+
+- product_id: 103
+  quantity:
+  expected_code: 400
+
+- product_id:
+  quantity: 1
+  expected_code: 404
