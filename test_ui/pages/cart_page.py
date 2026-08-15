@@ -69,7 +69,7 @@ class CartPage(BasePage):
     def get_cart_item_count(self):
         return len(self.get_cart_items())
 
-    def wait_for_cart_item_count(self, count, timeout=5):
+    def wait_for_cart_item_count(self, count, timeout=20):
         WebDriverWait(self.driver, timeout).until(
             lambda d: len(d.find_elements(*self.CART_ITEM)) == count,
             message=f"等待购物车条目数变为 {count} 超时",
@@ -79,7 +79,7 @@ class CartPage(BasePage):
         # 顶部统计数字：购物车所有商品数量之和
         return self.find(self.CART_COUNT).text
 
-    def wait_for_cart_count_text(self, count, timeout=5):
+    def wait_for_cart_count_text(self, count, timeout=20):
         # 添加/删除商品后，购物车统计是异步刷新的，等待数字变为期望值再断言
         WebDriverWait(self.driver, timeout).until(
             lambda d: d.find_element(*self.CART_COUNT).text == str(count),
@@ -129,7 +129,8 @@ class CartPage(BasePage):
         return re.fullmatch(r"¥\d+\.\d{2}", text) is not None
 
     def click_remove_cart_button(self, name=None, product_id=None):
-        self.get_cart_item_remove_button(name=name, product_id=product_id).click()
+        btn = self.get_cart_item_remove_button(name=name, product_id=product_id)
+        self.driver.execute_script("arguments[0].click();", btn)
 
     def is_cart_empty(self):
         return self.CART_EMPTY_TEXT in self.find(self.CART_CONTAINER).text

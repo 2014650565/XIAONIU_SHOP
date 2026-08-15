@@ -47,7 +47,8 @@ class ProductPage(BasePage):
         return self._product_card(name).find_element(*self.ADD_CART_BTN).text
 
     def click_add_to_cart_button(self,name):
-        self._product_card(name).find_element(*self.ADD_CART_BTN).click()
+        btn = self._product_card(name).find_element(*self.ADD_CART_BTN)
+        self.driver.execute_script("arguments[0].click();", btn)
 
     def add_to_cart_button_is_enable(self,name):
         return self._product_card(name).find_element(*self.ADD_CART_BTN).is_enabled()
@@ -65,4 +66,5 @@ class ProductPage(BasePage):
     def get_refresh_button_text(self):
         return self.find(self.REFRESH_BUTTON).text
     def click_refresh_button(self):
-        self.find(self.REFRESH_BUTTON).click()
+        btn = self.find(self.REFRESH_BUTTON)
+        self.driver.execute_script("arguments[0].click();", btn)

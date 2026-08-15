@@ -5,6 +5,7 @@ on:
         branches: [main]
     pull_request:
         branches: [main]
+    workflow_dispatch:
 
 jobs:
   test:
@@ -18,8 +19,11 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: setup chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: install dependencies
-        run: pip install flask pytest requests pyyaml allure-pytest selenium pytest-selenium
+        run: pip install flask pytest requests pyyaml allure-pytest "selenium>=4.15" pytest-selenium
 
       - name: run tests
-        run: pytest -m "not ui"
+        run: pytest
